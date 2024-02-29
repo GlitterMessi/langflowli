@@ -16,3 +16,29 @@ COPY ./ ./
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
 CMD ["uvicorn", "--factory", "src.backend.langflow.main:create_app", "--host", "0.0.0.0", "--port", "7860", "--reload", "--log-level", "debug"]
+
+FROM --platform=linux/amd64 node:19-bullseye-slim AS base
+RUN mkdir -p /home/node/app
+RUN chown -R node:node /home/node && chmod -R 770 /home/node
+RUN apt-get update && apt-get install -y jq curl
+WORKDIR /home/node/app
+
+# client build
+FROM base AS builder-client
+ARG BACKEND_URL
+ENV BACKEND_URL $BACKEND_URL
+RUN echo "BACKEND_URL: $BACKEND_URL"
+
+WORKDIR /home/node/app
+COPY --chown=node:node . ./
+
+COPY ./src/frontend/set_proxy.sh .
+RUN chmod +x set_proxy.sh && \
+    cat set_proxy.sh | tr -d '\r' > set_proxy_unix.sh && \
+    chmod +x set_proxy_unix.sh && \
+    ./set_proxy_unix.sh
+
+USER node
+
+RUN npm install --loglevel warn
+CMD ["npm", "run", "dev:docker"]
