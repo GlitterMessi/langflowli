@@ -500,7 +500,7 @@ export const NOUNS: string[] = [
  * @constant
  *
  */
-export const USER_PROJECTS_HEADER = "My Collection";
+export const USER_PROJECTS_HEADER = "Mazitao Dev";
 
 /**
  * Header text for admin page
